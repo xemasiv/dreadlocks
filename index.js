@@ -49,7 +49,8 @@ class Dreadlock{
             dread.index = 0;
           } else {
             // console.log('queue now empty, clearing timeout');
-            clearInterval(dread.timeout)
+            clearInterval(dread.timeout);
+            delete dread.timeout;
           }
         } else {
           // console.log('conflict found, cant lock', items, 'see', Array.from(dread._lock.keys()));
