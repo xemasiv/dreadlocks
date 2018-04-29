@@ -7,7 +7,7 @@ class Dreadlock{
       Boolean(interval) === true &&
       typeof interval === 'number' &&
       parseInt(interval) > 0
-    ) ? interval : 33;
+    ) ? interval : 4;
   }
   lock (items) {
     let dread = this;

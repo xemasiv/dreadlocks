@@ -21,7 +21,7 @@ Dread-free locks that drive consistency.
 * Uses `Map` so you can use anything as a key.
   * Although of course, use of `strings` are the most encouraged.
 * Uses `setInterval` for periodic checks and processing of queue.
-  * `new Dreadlock(interval)` accepts custom `interval` in ms, `33` by default; 1000/33 = `30.3 checks/s`
+  * `new Dreadlock(interval)` accepts custom `interval` in ms, `4` by default; 1000/4 = `250 checks/s`
 
 ### Use Cases:
 
