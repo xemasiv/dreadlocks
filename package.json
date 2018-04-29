@@ -1,0 +1,27 @@
+{
+  "name": "dreadlocks",
+  "version": "1.0.0",
+  "description": "Dread-free locks that drive consistency.",
+  "main": "index.js",
+  "scripts": {
+    "test": "ava --serial --fail-fast"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xemasiv/dreadlocks.git"
+  },
+  "keywords": [
+    "dreadlocks",
+    "dread-free",
+    "locks",
+    "for",
+    "consistency",
+    "xemasiv"
+  ],
+  "author": "xemasiv <xemasiv@gmail.com>",
+  "license": "CC0-1.0",
+  "bugs": {
+    "url": "https://github.com/xemasiv/dreadlocks/issues"
+  },
+  "homepage": "https://github.com/xemasiv/dreadlocks#readme"
+}
