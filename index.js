@@ -1,83 +1,102 @@
-class Dreadlock{
-  constructor (interval) {
-    this._lock = new Map();
-    this._queue = [];
-    this._processing = false;
-    this._interval = (
-      Boolean(interval) === true &&
-      typeof interval === 'number' &&
-      parseInt(interval) > 0
-    ) ? interval : 4;
-  }
-  lock (items) {
-    let dread = this;
-    let p = new Promise((resolve, reject) => {
-      dread._queue.push({
-        items,
-        resolve,
-        reject
-      });
-    });
-    // console.log('PUSH', items);
-    if (Boolean(dread.timeout) === false) {
-      // console.log('timeout not found, creating');
-      dread.index = 0;
-      dread.timeout = setInterval(() => {
-        // console.log('timeout called');
-        // console.log(dread.index, dread._queue.length, dread.index >= dread._queue.length);
-        if (dread.index >= dread._queue.length) {
-          // console.log('invalid dread.index, back to zero');
-          dread.index = 0;
-        }
-        // console.log('checking', dread.index);
-        let selected = dread._queue[dread.index];
-        let { items, resolve, reject } = selected;
-        // console.log('current items', items);
-        // console.log('current resolve', resolve);
-        // console.log('current reject', reject);
-        if (items.every((item) => dread._lock.has(item) === false) === true) {
-          // console.log('locking', items);
-          items.map((item) => dread._lock.set(item));
-          // console.log('lock is now', dread._lock);
-          resolve();
-          // console.log('removing from queue', items);
-          dread._queue.splice(dread.index, 1);
-          // console.log('queue is now', dread._queue);
-          // console.log('queue length is now', dread._queue.length);
-          if (dread._queue.length > 0) {
-            // console.log('queue still not empty, back to zero');
-            dread.index = 0;
-          } else {
-            // console.log('queue now empty, clearing timeout');
-            clearInterval(dread.timeout);
-            delete dread.timeout;
-          }
-        } else {
-          // console.log('conflict found, cant lock', items, 'see', Array.from(dread._lock.keys()));
-          if (dread._queue.length > 0) {
-            // console.log('from', dread.index);
-            dread.index = dread.index + 1;
-            // console.log('moving to next item', dread.index);
-          }
-        }
+const trace = require('debug')('Dreadlocks:trace');
+const warn = require('debug')('Dreadlocks:warning');
 
-      }, dread._interval);
-    }
-    return p;
+warn.enabled = true;
+
+class Deadlock {
+  constructor({ defaultLockTimeout = Infinity } = {}) {
+    this.defaultLockTimeout = defaultLockTimeout;
+    this._queue = [];
+    this._locks = new Map();
   }
-  release (items) {
-    let dread = this;
-    // console.log('releasing items', items);
-    let p = new Promise((resolve, reject) => {
-      items.map((item) => dread._lock.delete(item));
-      // console.log('reverting index to zero upon release');
-      dread.index = 0;
-      resolve();
+  get size() {
+    return this._locks.size;
+  }
+  release(keys) {
+    trace('release keys', keys);
+    const changedKeys = keys.reduce((accum, key) => {
+      if (!this._locks.has(key)) {
+        warn(`${key} was not locked`);
+        return accum;
+      }
+      const currentCount = this._locks.get(key) - 1;
+      trace(`${key} released. lock count: ${currentCount}`);
+      if (currentCount === 0) {
+        trace(`deleted ${key} lock count was 0`);
+        this._locks.delete(key);
+      } else {
+        this._locks.set(key, currentCount);
+      }
+      accum.set(key, true);
+      return accum;
+    }, new Map());
+
+    const readyItems = this._queue.filter((queueItem) => {
+      const isReady = queueItem.keys.every((key) => {
+        const isLocked  = this._locks.has(key)
+        const wasReleased = changedKeys.has(key);
+        return !isLocked || wasReleased;
+      });
+      return isReady;
     });
-    return p;
+
+    if (readyItems.length) {
+      const readyItem = readyItems.shift();
+      trace('queueItem is ready', readyItem.keys);
+      this._queue.splice(this._queue.indexOf(readyItem), 1);
+      readyItem.ready();
+    } else {
+      trace('could not process a queueItem from this lock release');
+    }
   }
-  get size () {
-    return this._lock.size;
+  lock(keys, { lockTimeout = this.defaultLockTimeout } = {}) {
+    trace(`lock ${keys}`);
+    return new Promise((resolve, reject) => {
+      const ready = () => {
+        if (lockTimeout !== Infinity) {
+          clearTimeout(timeoutId);
+        }
+        resolve();
+      };
+
+      let timeoutId;
+
+      if (lockTimeout !== Infinity) {
+        timeoutId = setTimeout(() => {
+          trace('Timeout waiting for', keys)
+          this._queue = this._queue.filter(queueItem => queueItem.ready !== ready);
+          keys.forEach((key) => {
+            if (!this._locks.has(key)) {
+              return;
+            }
+            const count = this._locks.get(key) - 1;
+            if (count === 0) {
+              this._locks.delete(key);
+            } else {
+              this._locks.set(key, count);
+            }
+          });
+          trace('Decremented lock counts for keys', keys);
+          reject(new Error('timeout waiting for lock'));
+        }, lockTimeout);
+      }
+
+      const isReady = keys.every((key) => {
+        const currentCount = this._locks.has(key) ? this._locks.get(key) : 0;
+        trace(`Set lock count for ${key} to ${currentCount + 1}`);
+        this._locks.set(key, currentCount + 1);
+        return currentCount === 0;
+      });
+
+      if (isReady) {
+        trace('was ready straight away');
+        ready();
+      } else {
+        trace('not ready, queued');
+        this._queue.push({ ready, keys });
+      }
+    });
   }
 }
-module.exports = Dreadlock;
+
+module.exports = Deadlock;

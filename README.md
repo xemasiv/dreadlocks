@@ -1,10 +1,13 @@
 # dreadlocks
 Dread-free locks that drive consistency.
 
-### Summary
+## Summary
+
+Dreadlocks allows you to create deadlocks on a set of keys. There is no limitation as to what key can
+be, it could be an `Object`, an `Array`, a `String`, or anything that can be a key in `Map`.
 
 * Create and use keys to identify objects:
-  * `let key1 = hash(anything)`
+  * `const key1 = {};`
 * Create key sets for keys involved in each task:
   * `const keySet = [key1, key2, key3]`
 * Lock these key sets
@@ -30,22 +33,40 @@ Dread-free locks that drive consistency.
 
 ---
 
-### class `Dreadlock`
-* constructor (`interval`)
-  * `interval` optional Integer, in ms
-* lock (`items`)
-  * `items` array of keys to lock
-  * RETURNS Promise, resolves on lock success
-* release (`items`)
-  * `items` array of keys to release
-  * RETURNS Promise, resolves on release success
-* size
-  * RETURNS current size of instance `Map`
+## API
+
+### Constructor
+
+#### `new Dreadlocks({ defaultLockTimeout = Infinity })`
+
+Construct an instance of Dreadlock. You can also set a default timeout to wait for
+a lock.
+
+### Methods
+
+#### `#lock(keyset[], { lockTimeout = this.defaultLockTimeout } = {})`
+
+* `keyset` array of keys to lock
+* `lockTimeout` timeout in ms for the lock to be obtained
+
+Return a `Promise` which will resolve when the lock is obtained, or reject when the
+timeout is reached.
+
+#### `#release(keyset[])`
+
+* `keyset` array of keys to release
+
+### Properties
+
+#### `#size`
+
+Current size of instance `Map`
+
 ---
 
-### Usage:
+## Usage:
 
-* Install:
+### Install
 ```
 npm install dreadlocks --save
 yarn add dreadlocks
@@ -54,12 +75,12 @@ yarn add dreadlocks
 const Dreadlock = require('dreadlocks');
 ```
 
-* Create instance:
+### Create instance
 ```
 const Dread = new Dreadlock();
 ```
 
-* Lock your keys anywhere in your code:
+### Lock your keys anywhere in your code:
 ```
 const keySet1 = ['key1', 'key2', 'key3'];
 Dread.lock(keySet1)
@@ -86,7 +107,7 @@ Dread.lock(keySet2)
     console.log('keySet2 released.');
   });
 ```
-* See the magic:
+###  See the magic:
 ```
 Working with keySet1.
 Done with keySet1.
@@ -98,6 +119,6 @@ keySet2 released.
 
 ---
 
-### LICENSE
+## LICENSE
 
 ![C](https://upload.wikimedia.org/wikipedia/commons/8/84/Public_Domain_Mark_button.svg) ![0](https://upload.wikimedia.org/wikipedia/commons/6/69/CC0_button.svg)
