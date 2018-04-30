@@ -11,12 +11,16 @@ class Dreadlock{
   }
   lock (items) {
     let dread = this;
-    let p = new Promise((resolve, reject) => {
-      dread._queue.push({
-        items,
-        resolve,
-        reject
-      });
+    let p = new Promise((resolve) => {
+      if (items.every((item) => dread._lock.has(item) === false) === true) {
+        items.map((item) => dread._lock.set(item));
+		resolve();
+	  } else {
+        dread._queue.push({
+          items,
+          resolve
+        });
+	  }
     });
     // console.log('PUSH', items);
     if (Boolean(dread.timeout) === false) {
@@ -31,11 +35,11 @@ class Dreadlock{
         }
         // console.log('checking', dread.index);
         let selected = dread._queue[dread.index];
-        let { items, resolve, reject } = selected;
+        let { items } = selected;
         // console.log('current items', items);
-        // console.log('current resolve', resolve);
-        // console.log('current reject', reject);
         if (items.every((item) => dread._lock.has(item) === false) === true) {
+          let { resolve } = selected;
+          // console.log('current resolve', resolve);
           // console.log('locking', items);
           items.map((item) => dread._lock.set(item));
           // console.log('lock is now', dread._lock);
@@ -68,7 +72,7 @@ class Dreadlock{
   release (items) {
     let dread = this;
     // console.log('releasing items', items);
-    let p = new Promise((resolve, reject) => {
+    let p = new Promise((resolve) => {
       items.map((item) => dread._lock.delete(item));
       // console.log('reverting index to zero upon release');
       dread.index = 0;

@@ -28,6 +28,14 @@ Dread-free locks that drive consistency.
 * Database consistency & transactions.
 * Ensuring order in execution of tasks that wish to modify possibly similar objects or entities.
 
+
+### Changelog
+
+* v2.x
+  * Added pre-queue check if keys can be locked immediately.
+* v1.x
+  * Basic functionality.
+
 ---
 
 ### class `Dreadlock`
